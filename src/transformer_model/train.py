@@ -152,6 +152,7 @@ def run_train(opt, logger):
 
     start_time = time.time()
     for epoch in range(start_epoch, opt.epochs):
+        print(str(epoch))
         logger.info(f"Epoch: {epoch + 1}")
 
         train_loss = train_loop(train_loader, model, criterion_ctc, criterion_transformer, optimizer)
@@ -161,22 +162,31 @@ def run_train(opt, logger):
         t = int((time.time() - start_time) / 60.)
         if cer_avg < best_cer:
             logger.info("New record!")
+            print("New record!")
             best_cer = cer_avg
             early_stopping = 0
             save_model(opt.out_dir, model, epoch + 1, train_loss, cer_avg, optimizer, early_stopping, scheduler, scaler)
         else:
             logger.info(f"Early stopping {early_stopping}/{opt.patience}")
+            print(f"Early stopping {early_stopping}/{opt.patience}")
             early_stopping += 1
 
         if early_stopping >= opt.patience:
             logger.info("Training has been interrupted because of early stopping")
+            print("Training has been interrupted because of early stopping")
             break
 
         for k, train_loss in train_loss.items():
             logger.info(f'Train Loss [{k}]: {train_loss:.4f}')
+            print(f'Train Loss [{k}]: {train_loss:.4f}')
         logger.info(f'Current CER: {cer_avg:.3f}, current WER: {wer_avg:.3f}, current accuracy: {acc_avg:.3f}')
         logger.info(f'Best CER: {best_cer:.3f}')
         logger.info(f'Learning Rate: {optimizer.param_groups[0]["lr"]}, Elapsed time: {t} min')
+
+        
+        print(f'Current CER: {cer_avg:.3f}, current WER: {wer_avg:.3f}, current accuracy: {acc_avg:.3f}')
+        print(f'Best CER: {best_cer:.3f}')
+        print(f'Learning Rate: {optimizer.param_groups[0]["lr"]}, Elapsed time: {t} min')
 
         torch.cuda.empty_cache()
         gc.collect()
