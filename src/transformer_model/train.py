@@ -78,7 +78,7 @@ def train_loop(data_loader, model, criterion_ctc, criterion_transformer, optimiz
         losses['ctc'].update(loss_ctc.item())
         losses['transformer'].update(loss_transformer.item())
         loss.backward()
-        print('data num : '+ str(index) +'/'+ len(data_loader) +' total loss : '+str(losses['total'].avg)+ ' ctc loss : '+str(losses['ctc'].avg)+' transformer loss : '+str(losses['transformer'].avg))
+        print('data num : '+ str(index) +'/'+' total loss : '+str(losses['total'].avg)+ ' ctc loss : '+str(losses['ctc'].avg)+' transformer loss : '+str(losses['transformer'].avg))
         torch.nn.utils.clip_grad_norm_(model.parameters(), 2)
         optimizer.step()
 
