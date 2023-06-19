@@ -36,6 +36,7 @@ def val_loop(data_loader, model, tokenizers, logger):
     accs = []
     for tokenizer_name, final_preds in final_predictions.items():
         df = pd.DataFrame(final_preds)
+        print(df)
         df["cer"] = df.apply(lambda x: levenshtein_distance(x["pred"], x["true"]), axis=1)
         cer_value = cer(df["pred"], df["true"])
         wer_value = wer(df["pred"], df["true"])
