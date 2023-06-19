@@ -78,7 +78,6 @@ def train_loop(data_loader, model, criterion_ctc, criterion_transformer, optimiz
         losses['ctc'].update(loss_ctc.item())
         losses['transformer'].update(loss_transformer.item())
         loss.backward()
-        print('data num : '+ str(index) +'/'+ str(len(data_loader.dataset)))
         torch.nn.utils.clip_grad_norm_(model.parameters(), 2)
         optimizer.step()
 
