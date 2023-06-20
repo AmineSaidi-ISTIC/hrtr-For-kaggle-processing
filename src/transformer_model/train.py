@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from tabulate import tabulate
 from torch.cuda import amp
 import torch
-
+import os
 from dataset.transformer_dataset import TransformerDataset
 from dataset.transforms import transforms
 from dataset.utils import get_charset
@@ -169,6 +169,10 @@ def run_train(opt, logger):
             print("New record!")
             best_cer = cer_avg
             early_stopping = 0
+            listSavedModels = os.listdir(opt.out_dir)
+            if (len(listSavedModels)>1):
+                for model_item in listSavedModels:
+                    os.remove(opt.out_dir+'/'+model_item)
             save_model(opt.out_dir, model, epoch + 1, train_loss, cer_avg, optimizer, early_stopping, scheduler, scaler)
         else:
             logger.info(f"Early stopping {early_stopping}/{opt.patience}")
