@@ -184,7 +184,7 @@ def run_train(opt, logger):
     loss_train_val_df.to_csv('lossData.csv')
     for epoch in range(start_epoch, opt.epochs):
         loss_data_to_save = {}
-        print(str(epoch))
+        print(str(epoch + 1 ))
         logger.info(f"Epoch: {epoch + 1}")
 
         train_loss = train_loop(train_loader, model, criterion_ctc, criterion_transformer, optimizer)
@@ -192,7 +192,7 @@ def run_train(opt, logger):
         loss_data_to_save['train_loss'] = train_loss
         loss_data_to_save['validation_loss'] = validation_loss
         loss_train_val_df = loss_train_val_df.append(loss_data_to_save,ignore_index=True)
-        loss_train_val_df.to_csv('lossData.csv')
+        loss_train_val_df.to_csv('lossData'+str(epoch+1)+'.csv')
         scheduler.step()
         
         t = int((time.time() - start_time) / 60.)
