@@ -61,14 +61,10 @@ def val_loop(data_loader, model, tokenizers, logger,  criterion_ctc, criterion_t
     cers = []
     wers = []
     accs = []
-    print('wsel lel loop')
     for tokenizer_name, final_preds in final_predictions.items():
-        print('d5al fel loop')
         df = pd.DataFrame(final_preds)
         print(df)
-        print('9bal cer')
         df["cer"] = df.apply(lambda x: levenshtein_distance(x["pred"], x["true"]), axis=1)
-        print('ba3ed cer')
         cer_value = cer(df["pred"], df["true"])
         wer_value = wer(df["pred"], df["true"])
         accuracy_value = string_accuracy(df["pred"], df["true"])
@@ -222,6 +218,9 @@ def run_train(opt, logger):
         for k, train_loss in train_loss.items():
             logger.info(f'Train Loss [{k}]: {train_loss:.4f}')
             print(f'Train Loss [{k}]: {train_loss:.4f}')
+        for k, validation_loss in validation_loss.items():
+            logger.info(f'Validation Loss [{k}]: {validation_loss:.4f}')
+            print(f'Validation Loss [{k}]: {validation_loss:.4f}')
         logger.info(f'Current CER: {cer_avg:.3f}, current WER: {wer_avg:.3f}, current accuracy: {acc_avg:.3f}')
         logger.info(f'Best CER: {best_cer:.3f}')
         logger.info(f'Learning Rate: {optimizer.param_groups[0]["lr"]}, Elapsed time: {t} min')
