@@ -21,15 +21,42 @@ from utilsFolder.metrics import cer, wer, string_accuracy, levenshtein_distance
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-def val_loop(data_loader, model, tokenizers, logger):
+def val_loop(data_loader, model, tokenizers, logger,  criterion_ctc, criterion_transformer, optimizer):
     logger.info("Validation")
     final_predictions = {k: {'true': [], 'pred': []} for k in tokenizers.keys()}
-
+    
+    losses = {}
+    for name in 'ctc', 'transformer', 'total':
+        losses[name] = AverageMeter()
+        
     for data in data_loader:
         text_preds = predict(data['image'], data['image_mask'], model, tokenizers)
         for tokenizer_name, pred in text_preds.items():
             final_predictions[tokenizer_name]['true'].extend(data['text'])
             final_predictions[tokenizer_name]['pred'].extend(pred)
+
+        images = data['image'].to(device)
+        image_masks = data['image_mask'].to(device)
+        enc_text_transformer = data['enc_text_transformer'].to(device)
+
+        model.zero_grad()
+        output = model(images, image_masks, enc_text_transformer)
+
+        output_lenghts = torch.full(size=(output['ctc'].size(1),), fill_value=output['ctc'].size(0), dtype=torch.long)
+        alpha = 0.25
+        loss_ctc = alpha * criterion_ctc(output['ctc'], data['enc_text_ctc'], output_lenghts, data['text_len'])
+
+        transformer_expected = enc_text_transformer
+        transformer_expected = F.pad(transformer_expected[:, 1:], pad=(0, 1, 0, 0), value=0)  # remove SOS token
+        loss_transformer = (1 - alpha) * criterion_transformer(output['transformer'].permute(0, 2, 1), transformer_expected)
+
+        loss = loss_transformer + loss_ctc
+        losses['total'].update(loss.item(), len(data['text']))
+        losses['ctc'].update(loss_ctc.item())
+        losses['transformer'].update(loss_transformer.item())
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 2)
+        optimizer.step()
 
     cers = []
     wers = []
@@ -53,7 +80,9 @@ def val_loop(data_loader, model, tokenizers, logger):
         cers.append(cer_value)
         wers.append(wer_value)
         accs.append(accuracy_value)
-    return min(cers), min(wers), max(accs)
+
+    
+    return min(cers), min(wers), max(accs), {k: v.avg for k, v in losses.items()}
 
 
 def train_loop(data_loader, model, criterion_ctc, criterion_transformer, optimizer):
@@ -155,14 +184,20 @@ def run_train(opt, logger):
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=opt.batch_size, collate_fn=collate_fn, pin_memory=True)
 
     start_time = time.time()
+    loss_train_val_df = pd.DataFrame(columns=['train_loss', 'validation_loss'])
+    loss_train_val_df.to_csv('lossData.csv')
     for epoch in range(start_epoch, opt.epochs):
+        loss_data_to_save = {}
         print(str(epoch))
         logger.info(f"Epoch: {epoch + 1}")
 
         train_loss = train_loop(train_loader, model, criterion_ctc, criterion_transformer, optimizer)
-        cer_avg, wer_avg, acc_avg = val_loop(val_loader, model, tokenizers, logger)
+        cer_avg, wer_avg, acc_avg, validation_loss = val_loop(val_loader, model, tokenizers, logger,  criterion_ctc, criterion_transformer, optimizer)
+        loss_data_to_save['train_loss'] = train_loss
+        loss_data_to_save['validation_loss'] = validation_loss
+        loss_train_val_df.to_csv('lossData.csv', mode='a', header=False)
         scheduler.step()
-
+        
         t = int((time.time() - start_time) / 60.)
         if cer_avg < best_cer:
             logger.info("New record!")
