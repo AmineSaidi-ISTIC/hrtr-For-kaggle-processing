@@ -192,7 +192,7 @@ def run_train(opt, logger):
         loss_data_to_save['train_loss'] = train_loss
         loss_data_to_save['validation_loss'] = validation_loss
         loss_train_val_df = loss_train_val_df.append(loss_data_to_save,ignore_index=True)
-        loss_train_val_df.to_csv('lossData.csv', mode='a', header=False)
+        loss_train_val_df.to_csv('lossData.csv')
         scheduler.step()
         
         t = int((time.time() - start_time) / 60.)
