@@ -191,6 +191,7 @@ def run_train(opt, logger):
         cer_avg, wer_avg, acc_avg, validation_loss = val_loop(val_loader, model, tokenizers, logger,  criterion_ctc, criterion_transformer, optimizer)
         loss_data_to_save['train_loss'] = train_loss
         loss_data_to_save['validation_loss'] = validation_loss
+        loss_train_val_df = loss_train_val_df.append(loss_data_to_save,ignore_index=True)
         loss_train_val_df.to_csv('lossData.csv', mode='a', header=False)
         scheduler.step()
         
