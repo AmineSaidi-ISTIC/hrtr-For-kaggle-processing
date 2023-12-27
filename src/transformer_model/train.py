@@ -135,6 +135,10 @@ def run_train(opt, logger):
         train_df_list.append(data_df[data_df.stage == "train"])
         val_df_list.append(data_df[data_df.stage == "val"])
     opt.charset = "".join(sorted(list(set(opt.charset))))
+    print('train_df_list')
+    print(train_df_list)
+    print('val_df_list')
+    print(val_df_list)
 
     logger.info('---------------------------------------- Options ----------------------------------------')
     args = vars(opt)
